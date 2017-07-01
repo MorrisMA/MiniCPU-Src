@@ -14,22 +14,20 @@
 #include "MiniCPU.h"
 #include "cpu_model.h"
 
-//extern void cpu_model(CPU *p, unsigned char *ram);
-
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[])
 {
 	CPU cpu;
 
-    unsigned char   rom[PML] = {0x0F, 0x3C, 0x21, 0x0F, 0x3F, 0x22, 0x30, 0x63,
-                                0x62, 0x61, 0x31, 0x60, 0x01, 0x37, 0x10, 0x6F,
-                                0x10, 0x4F, 0xA3, 0x24, 0x11, 0xCA, 0x21, 0x30,
-                                0x21, 0x24, 0x27, 0x10, 0xDE, 0x10, 0x6F, 0x44,
-                                0x21, 0x42, 0x24, 0x26, 0x60, 0x45, 0x21, 0x43,
-                                0x26, 0x61, 0x24, 0x11, 0xC3, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+    unsigned char   rom[PML] = {0x02, 0x00, 0x0F, 0x3C, 0x21, 0x0F, 0x3F, 0x22,
+    							0x30, 0x63, 0x62, 0x61, 0x31, 0x60, 0x01, 0x37,
+								0x10, 0x6F, 0x10, 0x4F, 0xA3, 0x24, 0x11, 0xCA,
+								0x21, 0x30, 0x21, 0x24, 0x27, 0x10, 0xDE, 0x10,
+								0x6F, 0x44, 0x21, 0x42, 0x24, 0x26, 0x60, 0x45,
+								0x21, 0x43, 0x26, 0x61, 0x24, 0x11, 0xC3, 0x00,
+								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     unsigned char   ram[DML] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -48,31 +46,38 @@ int main(int argc, char* argv[])
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
+    char ch;
+
     // Initialize CPU state
 
-    cpu.ma = 0; cpu.io = 0;
-    cpu.ip = 0;
-    cpu.xp = 0; cpu.yp = 0; cpu.ys = 0;
-    cpu.ki = 0; cpu.ir = 0;
-    cpu.ra = 0; cpu.rb = 0; cpu.cy = 0;
-    cpu.clr_ki = 0; cpu.ld_kil = 0; cpu.ld_kih = 0; cpu.ld_vec = 0;
+    cpu.op = RST;
+    cpu_model(&cpu);
 
     // Fetch and execute program continuously
 
     while(1) {
         printf("ma: %04X;", cpu.ma);
 
-        // Perform program memory fetch operation
+        // Perform program memory operation
 
-        cpu.io = rom[cpu.ma % PML];
+        if(IF == cpu.op) {
+        	printf(" IF;");
+        	cpu.io = rom[cpu.ma % PML];
+        } else if(RD == cpu.op) {
+        	printf(" RD;");
+        	cpu.io = ram[cpu.ma % DML];
+        } else if(WR == cpu.op) {
+        	printf(" WR;");
+        	ram[cpu.ma % DML] = cpu.io;
+        }
+
+        printf(" io: %02X;", cpu.io);
 
         // Call processor model
 
-        cpu_model(&cpu, ram);
+        cpu_model(&cpu);
 
         // Print out remainder of the processor state
-
-        printf(" io: %02X;", cpu.io);
 
         printf(" ki: %04X; ir: %02X; ip: %04X",
                cpu.ki,
@@ -82,10 +87,13 @@ int main(int argc, char* argv[])
                cpu.xp,
                cpu.yp,
                cpu.ys                           );
-        printf(" ra: %02X; rb: %02X; cy: %d\n",
+        printf(" ra: %02X; rb: %02X; cy: %d",
                cpu.ra,
                cpu.rb,
-               cpu.cy                           );
+			   cpu.cy							);
+
+//        ch = getchar();
+        printf("\n");
     }
 
 	return 0;
